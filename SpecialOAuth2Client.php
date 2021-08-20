@@ -174,16 +174,18 @@ class SpecialOAuth2Client extends SpecialPage {
 
 		$username = JsonHelper::extractValue($response, $wgOAuth2Client['configuration']['username']);
 		$email =  JsonHelper::extractValue($response, $wgOAuth2Client['configuration']['email']);
+                $uid = JsonHelper::extractValue($response, 'ldap_uid');
 		Hooks::run("OAuth2ClientBeforeUserSave", [&$username, &$email, $response]);
-		$user = User::newFromName($username, 'creatable');
+		$user = User::newFromId($uid);
 		if (!$user) {
-			throw new MWException('Could not create user with username:' . $username);
+			throw new MWException('Could not create user with user id:' . $uid);
 			die();
 		}
 		$user->setRealName($username);
 		$user->setEmail($email);
 		$user->load();
 		if ( !( $user instanceof User && $user->getId() ) ) {
+		        $user->mName = $username;
 			$user->addToDatabase();
 			// MediaWiki recommends below code instead of addToDatabase to create user but it seems to fail.
 			// $authManager = MediaWiki\Auth\AuthManager::singleton();
